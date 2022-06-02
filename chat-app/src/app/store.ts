@@ -1,18 +1,24 @@
 import { combineReducers, configureStore } from "@reduxjs/toolkit";
 import { authApiSlice } from "../features/auth/authApiSlice";
 import authSlice from "../features/auth/authSlice";
-import noteApi from "../features/note";
+import { generalMessageApiSlice } from "../features/chat";
+import { userApiSlice } from "../features/user";
 const rootReducer = combineReducers({
   auth: authSlice,
   [authApiSlice.reducerPath]: authApiSlice.reducer,
-  [noteApi.reducerPath]: noteApi.reducer,
+  [userApiSlice.reducerPath]: userApiSlice.reducer,
+  [generalMessageApiSlice.reducerPath]: generalMessageApiSlice.reducer,
 });
 
 export const store = configureStore({
   reducer: rootReducer,
   /**  Middleware collection */
   middleware: (getDefaultMiddleware) =>
-    getDefaultMiddleware().concat(noteApi.middleware, authApiSlice.middleware),
+    getDefaultMiddleware().concat(
+      authApiSlice.middleware,
+      userApiSlice.middleware,
+      generalMessageApiSlice.middleware
+    ),
 });
 
 export type AppDispatch = typeof store.dispatch;

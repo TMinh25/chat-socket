@@ -50,34 +50,17 @@ export default function SignUpPage() {
   } = useFormik({
     initialValues: {
       displayName: "",
-      aliases: "",
-      sex: undefined,
-      degree: "",
-      workPlace: "",
-      nation: "",
-      backgroundInfomation: "",
-      email: "",
       username: "",
       password: "",
       rePassword: "",
-      photoURL: "",
-      role: -1,
-      userSetting: {
-        forReviewer: {
-          acceptingReview: false,
-          reviewField: [],
-        },
-      },
+      avatar: "",
     },
     validationSchema: yup.object({
       displayName: yup.string().required("Vui lòng nhập họ tên của bạn!"),
-      aliases: yup.string(),
-      email: yup.string().email().required("Vui lòng nhập email của bạn!"),
       username: yup
         .string()
         .min(6, "Tài khoản phải có ít nhất 6 kí tự")
         .required("Hãy nhập tên tài khoản của bạn"),
-      workPlace: yup.string().required("Hãy nhập đơn vị bạn đang công tác"),
       password: yup
         .string()
         .min(8, "Mật khẩu phải dài ít nhất 8 kí tự")
@@ -92,12 +75,8 @@ export default function SignUpPage() {
             .string()
             .oneOf([yup.ref("password")], "Mật khẩu không trùng khớp"),
         }),
-      role: yup.number(),
     }),
     onSubmit: (signUpForm) => {
-      console.log(typeof signUpForm);
-      signUpForm.role = isReviewer ? 4 : 5;
-
       signUp(signUpForm)
         .unwrap()
         .then((user) => {
@@ -159,16 +138,6 @@ export default function SignUpPage() {
                     />
                   </Box>
                 </HStack>
-                <FormControlComponent
-                  id="email"
-                  formLabel="Email"
-                  value={values.email}
-                  onChange={handleChange}
-                  onBlur={handleBlur}
-                  touched={touched.email?.toString()}
-                  error={errors.email}
-                  isRequired
-                />
                 <FormControlComponent
                   id="username"
                   formLabel="Tên tài khoản"

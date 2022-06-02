@@ -1,26 +1,15 @@
 import {
-  Avatar,
-  Box,
-  Button,
-  Collapse,
-  Heading,
-  HStack,
-  Progress,
-  Text,
-  WrapItem,
+  Progress
 } from "@chakra-ui/react";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
-import io, { Manager } from "socket.io-client";
 import "./App.css";
 import { useAppDispatch } from "./app/hooks";
-import { NoteTags } from "./components/note/BlogTags";
-import config from "./config";
+import PrivateRoute from "./components/PrivateRoute";
 import { useGetAuthInfoMutation } from "./features/auth/authApiSlice";
 import { setCredentials, setIsAuthenticating } from "./features/auth/authSlice";
 import { useAppState } from "./hooks/useAppState";
 import { useAuth } from "./hooks/useAuth";
-import INote from "./models/note.model";
 import NotFound from "./pages/404";
 import { HomePage } from "./pages/Home";
 import LandingPage from "./pages/Layout";
@@ -29,19 +18,9 @@ import SignInPage from "./pages/SignIn";
 import SignUpPage from "./pages/SignUp";
 import ProfilePage from "./pages/User";
 import TokenService from "./services/token.service";
-import PrivateRoute from "./components/PrivateRoute";
 
-export const socketManager = new Manager(config.server.url, {
-  autoConnect: false,
-  transports: ["websocket", "polling", "flashsocket"],
-});
-
-export const socket = io("http://localhost:5000", { withCredentials: true });
 
 function App() {
-  // const { data: notes, isLoading, isFetching } = useGetAllNotesQuery();
-  const [messages, setMessages] = useState<JSX.Element[]>([]);
-  const [message, setMessage] = useState<string>("");
 
   const dispatch = useAppDispatch();
   const accessToken = TokenService.getLocalAccessToken();

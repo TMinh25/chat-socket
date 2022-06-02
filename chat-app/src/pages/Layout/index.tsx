@@ -3,6 +3,7 @@ import {
   Button,
   ButtonGroup,
   Circle,
+  Divider,
   Flex,
   HStack,
   Icon,
@@ -22,27 +23,26 @@ import {
   ScaleFade,
   Tag,
   Text,
-  Tooltip,
   useBreakpointValue,
   useColorModeValue,
   useDisclosure,
-  VStack,
 } from "@chakra-ui/react";
 import { FiMenu } from "react-icons/fi";
+import { MdOutlinePowerSettingsNew } from "react-icons/md";
 import {
   Link as RouterLink,
   Outlet,
   useLocation,
   useNavigate,
 } from "react-router-dom";
+import { useAppDispatch } from "../../app/hooks";
 import { ColorModeSwitcher } from "../../components/ColorModeSwitcher";
+import { useSignOutMutation } from "../../features/auth/authApiSlice";
+import { resetCredentials } from "../../features/auth/authSlice";
 import { useAppState } from "../../hooks/useAppState";
 import { useAuth } from "../../hooks/useAuth";
-import { useSignOutMutation } from "../../features/auth/authApiSlice";
-import { MdOutlinePowerSettingsNew } from "react-icons/md";
-import { useAppDispatch } from "../../app/hooks";
-import { resetCredentials } from "../../features/auth/authSlice";
 import TokenService from "../../services/token.service";
+import { FcHome } from "react-icons/fc";
 
 export default function LandingPage() {
   const location = useLocation();
@@ -86,12 +86,27 @@ export default function LandingPage() {
         >
           {isDesktop ? (
             <Flex justify="space-between" align="center">
-              <ButtonGroup variant="solid" spacing="8">
+              <ButtonGroup variant="solid" spacing="4">
+                <IconButton
+                  icon={<Icon as={FcHome} />}
+                  aria-label="nav-home-button"
+                  as={RouterLink}
+                  to="/"
+                />
                 {[
                   { href: "/message/all", label: "Tin Nhắn Chung" },
-                  { href: "/message/direct", label: "Tin Nhắn Riêng" },
-                ].map((item) => (
-                  <Button as={RouterLink} to={item.href} key={item.label}>
+                  {
+                    href: "/message/direct",
+                    label: "Tin Nhắn Riêng",
+                    disabled: true,
+                  },
+                ].map((item, index) => (
+                  <Button
+                    as={RouterLink}
+                    to={item.disabled ? "#" : item.href}
+                    key={index}
+                    disabled={item.disabled}
+                  >
                     {item.label}
                   </Button>
                 ))}
@@ -143,6 +158,7 @@ export default function LandingPage() {
             />
           )}
         </Box>
+        <Divider />
         {authenticated && (
           <Modal isOpen={signOutModal.isOpen} onClose={signOutModal.onClose}>
             <ModalOverlay />
@@ -167,7 +183,7 @@ export default function LandingPage() {
             </ModalContent>
           </Modal>
         )}
-        <Box flex="1 1 auto">
+        <Box flex="1 1 auto" h="calc(100vh - 112px)">
           <Outlet />
         </Box>
       </Flex>

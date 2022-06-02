@@ -1,11 +1,12 @@
-import express, { Request, Response, NextFunction } from "express";
-import logger from "./config/logger";
 import cors from "cors";
-import { mongoDbInitValidation } from "./middlewares/initValidation";
+import express, { NextFunction, Request, Response } from "express";
 import http from "http";
+import mongoose from "mongoose";
 import { Server } from "socket.io";
 import config from "./config/config";
-import mongoose from "mongoose";
+import logger from "./config/logger";
+import generalMessageController from "./controllers/generalMessage.controller";
+import { mongoDbInitValidation } from "./middlewares/initValidation";
 import initializeRoutes from "./routes";
 
 const NAMESPACE = "Server";
@@ -63,20 +64,20 @@ httpServer.listen({ port: port, host: "0.0.0.0" }, () =>
 );
 
 // Create the socket
-const io = new Server(httpServer, {
+export const io = new Server(httpServer, {
   cors: {
     origin: ["http://localhost:3000"],
     credentials: true,
   },
 });
+
 io.on("connection", (socket) => {
   logger.info(NAMESPACE, `Người dùng mới đã kết nối\ `);
 
-  socket.on("message. type. all", (msg) => {
-    io.emit("message. type. all", msg);
-
-    logger.info(NAMESPACE, "new messagek");
+  socket.on("message all", async (msg) => {
+    await generalMessageController.pushMessage(JSON.parse(msg));
+    io.emit("message all", msg);
+    logger.debug(NAMESPACE, "NEW MESSAGE", msg);
   });
 });
-
-io.to("new user").emit("con cac");
+// initializeSocket(io);

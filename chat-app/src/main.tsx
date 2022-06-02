@@ -8,7 +8,9 @@ import {
   ChakraProvider,
   ColorModeProvider,
   ThemeProvider,
+  extendTheme,
 } from "@chakra-ui/react";
+import { mode } from "@chakra-ui/theme-tools";
 import "./index.css";
 
 ReactDOM.createRoot(document.getElementById("root")!).render(

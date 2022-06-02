@@ -1,6 +1,6 @@
 import mongoose, { Schema, Document } from "mongoose";
 
-export interface IMessage extends Document {
+export interface IGeneralMessage extends Document {
   _id: String;
   message: String;
   sender: {
@@ -11,7 +11,7 @@ export interface IMessage extends Document {
   updatedAt: Date;
 }
 
-const MessageSchema: Schema = new Schema(
+const GeneralMessageSchema: Schema = new Schema(
   {
     message: { type: String, required: true, trim: true },
     sender: {
@@ -27,5 +27,8 @@ const MessageSchema: Schema = new Schema(
   }
 );
 
-const Message = mongoose.model<IMessage>("Message", MessageSchema);
-export default Message;
+const GeneralMessage = mongoose.model<IGeneralMessage>(
+  "General Message",
+  GeneralMessageSchema
+);
+export default GeneralMessage;

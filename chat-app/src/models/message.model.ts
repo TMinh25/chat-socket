@@ -1,10 +1,10 @@
 export default interface IMessage {
-  _id?: String;
-  message: String;
+  _id?: string;
+  message: string;
   sender: {
-    _id: String;
-    displayName: String;
+    _id: string;
+    displayName: string;
   };
-  createdAt?: Date;
+  createdAt: Date;
   updatedAt?: Date;
 }

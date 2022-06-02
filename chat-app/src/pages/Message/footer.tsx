@@ -27,14 +27,18 @@ const Footer: FC<
             }
           }}
           value={inputMessage}
+          shadow="inner"
           onChange={(e) => setInputMessage(e.target.value)}
         />
         <InputRightElement width="4.5rem">
           <Button
             disabled={inputMessage.trim().length <= 0}
+            // background={"#EC4EA2"}
+            // _hover={{ background: "" }}
             onClick={handleSendMessage}
             h="1.75rem"
             size="sm"
+            shadow="outline"
           >
             Gửi
           </Button>
