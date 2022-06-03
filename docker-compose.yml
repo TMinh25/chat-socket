@@ -1,0 +1,16 @@
+version: "3.7"
+
+services:
+  app:
+    image: chat-app:latest
+    depends_on:
+      - api
+    ports:
+      - "3000:3000"
+    restart: unless-stopped
+    container_name: chat-app
+  api:
+    image: chat-api:latest
+    ports:
+      - "5000:5000"
+    container_name: chat-api

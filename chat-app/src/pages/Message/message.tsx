@@ -32,9 +32,21 @@ const MessagesBox: React.FC<{ messages: IMessage[] } & FlexProps> = ({
     <>
       {messages.map((item, index) => {
         if (item.sender?._id === currentUser?._id) {
-          return <ReceiverMessage messageItem={item} index={index} />;
+          return (
+            <ReceiverMessage
+              key={`message-${index}`}
+              messageItem={item}
+              index={index}
+            />
+          );
         } else {
-          return <SenderMessage messageItem={item} index={index} />;
+          return (
+            <SenderMessage
+              key={`message-${index}`}
+              messageItem={item}
+              index={index}
+            />
+          );
         }
       })}
       <AlwaysScrollToBottom />

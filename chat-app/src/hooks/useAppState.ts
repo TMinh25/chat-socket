@@ -4,7 +4,7 @@ import { useAppSelector } from "../app/hooks";
 
 export const useAppState = () => {
   const auth = useAppSelector((state) => state.auth);
-  const appState = useAppSelector((state) => state.appState);
+  // const appState = useAppSelector((state) => state.appState);
   const toast = useToast({
     variant: "subtle",
     isClosable: true,
@@ -12,5 +12,5 @@ export const useAppState = () => {
     position: "bottom-left",
   });
 
-  return useMemo(() => ({ appState, auth, toast }), [appState, auth]);
+  return useMemo(() => ({ auth, toast }), [auth]);
 };
