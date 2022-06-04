@@ -71,13 +71,32 @@ export const io = new Server(httpServer, {
   },
 });
 
+// const onlineUsers = {};
 io.on("connection", (socket) => {
-  logger.info(NAMESPACE, `Người dùng mới đã kết nối\ `);
+  // let online = Object.keys(io.engine.clients);
+  // io.emit("server message", JSON.stringify(online));
+  // logger.debug(NAMESPACE, online);
+
+  // socket.on("online", function ({ userId }) {
+  //   logger.info(NAMESPACE, `Người dùng đã kết nối: ${userId}\ `);
+  //   // console.log("a user " + data.userId + " connected");
+  //   // saving userId to object with socket ID
+  //   // onlineUsers[socket.id as any] = data.userId;
+  // });
 
   socket.on("message all", async (msg) => {
     await generalMessageController.pushMessage(JSON.parse(msg));
     io.emit("message all", msg);
     logger.debug(NAMESPACE, "NEW MESSAGE", msg);
   });
+
+  // socket.on("disconnect", function () {
+  //   logger.info(NAMESPACE, `Người dùng ngắt kết nối\ `);
+  //   var online = Object.keys(io.engine.clients);
+  //   io.emit("server message", JSON.stringify(online));
+  //   // console.log("user " + onlineUsers[socket.id] + " offline");
+  //   // remove saved socket from users object
+  //   // onlineUsers[socket.id as any] = null;
+  // });
 });
 // initializeSocket(io);

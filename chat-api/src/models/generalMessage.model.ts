@@ -7,6 +7,7 @@ export interface IGeneralMessage extends Document {
     _id: String;
     displayName: String;
   };
+  deleted: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -18,6 +19,7 @@ const GeneralMessageSchema: Schema = new Schema(
       _id: { type: mongoose.Types.ObjectId, required: true },
       displayName: { type: String, required: true },
     },
+    deleted: { type: Boolean, required: true, default: false },
   },
   {
     _id: true,

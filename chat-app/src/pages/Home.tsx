@@ -1,6 +1,7 @@
 import { Center, Heading, Image, Stack } from "@chakra-ui/react";
 import * as React from "react";
 import HeroImage from "../assets/hero-image.png";
+import { chatSocket } from "../features/chat/socketManager";
 
 export const HomePage = () => {
   return (

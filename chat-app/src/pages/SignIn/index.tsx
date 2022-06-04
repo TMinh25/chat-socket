@@ -31,6 +31,7 @@ import IUser from "../../models/user.model";
 import { useFormik } from "formik";
 import * as yup from "yup";
 import { FaChevronLeft } from "react-icons/fa";
+import { chatSocket } from "../../features/chat/socketManager";
 
 function SignInPage() {
   const dispatch = useAppDispatch();
@@ -64,6 +65,7 @@ function SignInPage() {
         try {
           await signIn(signInForm).unwrap();
           const user = await fetchAuthInfo().unwrap();
+          chatSocket.emit("online", { userId: user._id });
           console.log("signIn");
           await setUserCredentials(user);
         } catch (error) {

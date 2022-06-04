@@ -1,6 +1,13 @@
 import {
+  AlertDialog,
+  AlertDialogBody,
+  AlertDialogContent,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogOverlay,
   Avatar,
   Box,
+  Button,
   Flex,
   Kbd,
   Skeleton,
@@ -8,28 +15,30 @@ import {
   SkeletonText,
   Spacer,
   useColorModeValue,
+  useDisclosure,
+  UseDisclosureReturn,
 } from "@chakra-ui/react";
-import React, { useEffect, useState } from "react";
-import io, { Manager, Socket } from "socket.io-client";
+import React, { FC, useEffect, useState } from "react";
 import { useAuth } from "../../hooks/useAuth";
 import IMessage from "../../models/message.model";
-import config from "../../config";
 import Footer from "./footer";
 import MessagesBox from "./message";
 import { useAppState } from "../../hooks/useAppState";
-import { useGetAllGenenralMessagesQuery } from "../../features/chat";
+import {
+  useGetAllGenenralMessagesQuery,
+  useUpdateGeneralMessageMutation,
+  useDeleteGeneralMessageMutation,
+} from "../../features/chat";
+import { chatSocket } from "../../features/chat/socketManager";
 
-export const socketManager = new Manager(config.server.url, {
-  autoConnect: false,
-  transports: ["websocket", "polling", "flashsocket"],
-});
-
-export const chatSocket: Socket = io("http://localhost:5000", {
-  withCredentials: true,
-});
+chatSocket.connect();
 
 const Chat = () => {
-  const { data, isLoading } = useGetAllGenenralMessagesQuery();
+  const { data, isLoading, refetch } = useGetAllGenenralMessagesQuery();
+  const [deleteMessage, deleteMessageResult] =
+    useDeleteGeneralMessageMutation();
+  const [updateMessage, updateMessageResult] =
+    useUpdateGeneralMessageMutation();
 
   const [messages, setMessages] = useState<IMessage[]>([]);
   const [inputMessage, setInputMessage] = useState("");
@@ -42,14 +51,17 @@ const Chat = () => {
     }
   }, [data]);
 
+  chatSocket.on("connect", () => {
+    if (currentUser && currentUser?._id) {
+      chatSocket.emit("online", { userId: currentUser._id });
+    }
+  });
+
   chatSocket.on("message all", function (msg) {
     const oldMessages = [...messages];
     oldMessages.push(JSON.parse(msg));
     setMessages((val) => oldMessages);
-    // window.scrollTo(0, document.body.scrollHeight);
   });
-
-  // socket.emit("hello", "akjsndkjans");
 
   const handleSendMessage = () => {
     if (!!inputMessage) {
@@ -65,6 +77,42 @@ const Chat = () => {
         } as IMessage)
       );
       setInputMessage("");
+    }
+  };
+
+  const handleUpdateMessage = async (message: string, _id?: string) => {
+    try {
+      if (!!_id && !!message) {
+        const result = await updateMessage({ _id, message }).unwrap();
+        toast({
+          status: "success",
+          title: result,
+        });
+      }
+    } catch (error) {
+      toast({
+        status: "error",
+        title: "Lỗi",
+        description: (error as any).toString(),
+      });
+    } finally {
+      refetch();
+    }
+  };
+
+  const handleDeleteMessage = (_id?: string): void => {
+    try {
+      if (!!_id) {
+        deleteMessage(_id);
+      }
+    } catch (error) {
+      toast({
+        status: "error",
+        title: "Lỗi",
+        description: (error as any).toString(),
+      });
+    } finally {
+      refetch();
     }
   };
 
@@ -90,7 +138,12 @@ const Chat = () => {
           {isLoading ? (
             <MessageSkeleton />
           ) : (
-            <MessagesBox flex="1 1 auto" messages={messages} />
+            <MessagesBox
+              flex="1 1 auto"
+              messages={messages}
+              onDeleteMessage={handleDeleteMessage}
+              onUpdateMessage={handleUpdateMessage}
+            />
           )}
         </Flex>
         <Spacer />
@@ -168,7 +221,7 @@ const MessageSkeleton = () => {
           <SkeletonText my="4" noOfLines={3} spacing="2" />
         </Box>
       </Flex>
-      <Flex key={"message-skeleton-2"} w="100%" my={1}>
+      <Flex key={"message-skeleton-5"} w="100%" my={1}>
         <SkeletonCircle size="10" />
         <Box
           color={textColor}

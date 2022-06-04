@@ -43,6 +43,7 @@ import { useAppState } from "../../hooks/useAppState";
 import { useAuth } from "../../hooks/useAuth";
 import TokenService from "../../services/token.service";
 import { FcHome } from "react-icons/fc";
+// import { chatSocket } from "../../features/chat/socketManager";
 
 export default function LandingPage() {
   const location = useLocation();
@@ -62,6 +63,7 @@ export default function LandingPage() {
       dispatch(resetCredentials());
       TokenService.updateLocalAccessToken(null);
       TokenService.updateLocalRefreshToken(null);
+      // chatSocket.disconnect();
       signOutModal.onClose();
       navigate("/");
     } catch (error) {
