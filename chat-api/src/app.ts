@@ -66,37 +66,58 @@ httpServer.listen({ port: port, host: "0.0.0.0" }, () =>
 // Create the socket
 export const io = new Server(httpServer, {
   cors: {
-    origin: ["http://localhost:3000"],
+    origin: ["http://localhost:3000", "*"],
     credentials: true,
   },
 });
 
-// const onlineUsers = {};
-io.on("connection", (socket) => {
-  // let online = Object.keys(io.engine.clients);
-  // io.emit("server message", JSON.stringify(online));
-  // logger.debug(NAMESPACE, online);
+const onlineUsers = new Map<string, boolean>();
+const ioChat = io.of("/messages");
 
-  // socket.on("online", function ({ userId }) {
-  //   logger.info(NAMESPACE, `Người dùng đã kết nối: ${userId}\ `);
-  //   // console.log("a user " + data.userId + " connected");
-  //   // saving userId to object with socket ID
-  //   // onlineUsers[socket.id as any] = data.userId;
-  // });
-
-  socket.on("message all", async (msg) => {
-    await generalMessageController.pushMessage(JSON.parse(msg));
-    io.emit("message all", msg);
-    logger.debug(NAMESPACE, "NEW MESSAGE", msg);
+ioChat.on("connection", (socket) => {
+  socket.on("online", function ({ userId }: { userId: string }) {
+    logger.info(NAMESPACE, `Người dùng đã kết nối: ${userId}\ `);
+    onlineUsers.set(userId, Boolean(socket.id));
+    logger.debug(NAMESPACE, onlineUsers);
+    // console.log("a user " + data.userId + " connected");
+    // saving userId to object with socket ID
+    // onlineUsers[socket.id as any] = data.userId;
   });
 
-  // socket.on("disconnect", function () {
-  //   logger.info(NAMESPACE, `Người dùng ngắt kết nối\ `);
-  //   var online = Object.keys(io.engine.clients);
-  //   io.emit("server message", JSON.stringify(online));
-  //   // console.log("user " + onlineUsers[socket.id] + " offline");
-  //   // remove saved socket from users object
-  //   // onlineUsers[socket.id as any] = null;
-  // });
+  socket.broadcast.emit("user connected", onlineUsers);
+
+  socket.on("offline", function ({ userId }: { userId: string }) {
+    logger.debug(NAMESPACE, `Người dùng ngắt kết nối: ${userId} `);
+    onlineUsers.delete(userId);
+    logger.debug(NAMESPACE, onlineUsers);
+  });
+  function sendUserStack() {
+    ioChat.emit("online stack", onlineUsers);
+  }
+
+  socket.on("message all", async (msg) => {
+    const message = await generalMessageController.pushMessage(msg);
+    ioChat.emit("message all", message);
+    logger.debug(NAMESPACE, "NEW MESSAGE", message);
+  });
+
+  socket.on("update message", async ({ _id, message }) => {
+    const newMessage = await generalMessageController.updateMessage({
+      _id,
+      message,
+    });
+    ioChat.emit("update message result", {
+      message: newMessage,
+      update: Boolean(newMessage),
+    });
+  });
+
+  socket.on("delete message", async (_id) => {
+    const deletedMessage = await generalMessageController.deleteMessage(_id);
+    ioChat.emit("delete message result", {
+      message: deletedMessage,
+      deleted: Boolean(deletedMessage),
+    });
+    logger.debug(NAMESPACE, "DELETE MESSAGE", _id);
+  });
 });
-// initializeSocket(io);

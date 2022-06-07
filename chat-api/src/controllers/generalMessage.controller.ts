@@ -10,9 +10,32 @@ const NAMESPACE = "Message Controller";
 const pushMessage = async (message: Partial<IGeneralMessage>) => {
   try {
     const generalMessage = new GeneralMessage(message);
-    await generalMessage.save();
+    const newMessage = await generalMessage.save();
+    return newMessage;
   } catch (error) {
     logger.error(NAMESPACE, error);
+  }
+};
+
+const deleteMessage = async (
+  _id: string
+): Promise<
+  | (IGeneralMessage & {
+      _id: string;
+    })
+  | null
+> => {
+  try {
+    if (!isValidObjectID(_id) || !(await GeneralMessage.exists({ _id })))
+      return null;
+    const message = await GeneralMessage.findOneAndUpdate(
+      { _id },
+      { deleted: true }
+    );
+    return message;
+  } catch (error) {
+    logger.error(NAMESPACE, error);
+    return null;
   }
 };
 
@@ -28,48 +51,35 @@ const getAllGeneralMessages = async (req: Request, res: Response) => {
   }
 };
 
-const updateGeneralMessage = async (req: Request, res: Response) => {
+const updateMessage = async ({
+  _id,
+  message,
+}: Pick<IGeneralMessage, "_id" | "message">): Promise<
+  | (IGeneralMessage & {
+      _id: string;
+    })
+  | null
+> => {
   try {
-    const { _id } = req.params;
-    const { message } = req.body;
-    if (!isValidObjectID(_id))
-      return res
-        .status(400)
-        .json({ success: false, message: "Không tìm được tin nhắn!" });
-    else if (!(await GeneralMessage.exists({ _id })))
-      return res
-        .status(404)
-        .json({ success: false, message: "Tin nhắn không tồn tại!" });
+    if (!isValidObjectID(_id) || !(await GeneralMessage.exists({ _id })))
+      return null;
     else {
       const doc = await GeneralMessage.findOneAndUpdate(
         { _id },
-        { message },
+        { message, updated: true },
         { new: true }
       );
-      return res
-        .status(200)
-        .json({ success: true, message: "Tin nhắn được cập nhật thành công" });
+      return doc;
     }
   } catch (error) {
     logger.error(NAMESPACE, error);
-    res.status(500).json({ success: false });
-  }
-};
-
-const deleteGeneralMessage = async (req: Request, res: Response) => {
-  try {
-    const { _id } = req.params;
-    const message = await GeneralMessage.findOneAndDelete({ _id });
-    return res.status(200).json({ success: true });
-  } catch (error) {
-    logger.error(NAMESPACE, error);
-    res.status(500).json({ success: false });
+    return null;
   }
 };
 
 export default {
   pushMessage,
+  updateMessage,
+  deleteMessage,
   getAllGeneralMessages,
-  deleteGeneralMessage,
-  updateGeneralMessage,
 };
