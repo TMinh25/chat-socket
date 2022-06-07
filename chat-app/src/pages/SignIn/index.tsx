@@ -65,8 +65,9 @@ function SignInPage() {
         try {
           await signIn(signInForm).unwrap();
           const user = await fetchAuthInfo().unwrap();
+          chatSocket.auth = { _id: user._id };
+          chatSocket.connect();
           chatSocket.emit("online", { userId: user._id });
-          console.log("signIn");
           await setUserCredentials(user);
         } catch (error) {
           console.log(error);

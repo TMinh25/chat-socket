@@ -5,6 +5,8 @@ export default interface IMessage {
     _id: string;
     displayName: string;
   };
+  deleted: boolean;
+  updated: boolean;
   createdAt: Date;
   updatedAt?: Date;
 }

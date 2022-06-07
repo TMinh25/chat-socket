@@ -9,6 +9,7 @@ import {
   Box,
   Button,
   ButtonGroup,
+  Circle,
   Editable,
   EditablePreview,
   EditableTextarea,
@@ -18,6 +19,7 @@ import {
   IconButton,
   Kbd,
   ScaleFade,
+  Stack,
   Text,
   useColorModeValue,
   useDisclosure,
@@ -113,14 +115,28 @@ const MessagesBox: React.FC<
 const ReceiverMessage: FC<{
   messageItem: IMessage;
   index: number;
-  onDeleteMessage: (id?: string) => void;
-  onUpdateMessage: (message: string, id?: string) => void;
+  onDeleteMessage?: (id?: string) => void;
+  onUpdateMessage?: (message: string, id?: string) => void;
 }> = ({ messageItem, index, onDeleteMessage, onUpdateMessage }) => {
-  const selfMessageColor = useColorModeValue("messenger.500", "messenger.500");
+  const deleteMessageColor = useColorModeValue("gray.300", "gray.500");
   const deleteAndUpdateButton = useDisclosure();
   const deleteMessageDialog = useDisclosure();
 
-  const UpdateEditableControls = () => {
+  const DeleteControls = () => {
+    return (
+      <ScaleFade initialScale={0.8} in={deleteAndUpdateButton.isOpen}>
+        <IconButton
+          rounded={"full"}
+          icon={<Icon as={BiTrash} />}
+          aria-label={`trash-message-${index}`}
+          mr={2}
+          onClick={deleteMessageDialog.onOpen}
+        />
+      </ScaleFade>
+    );
+  };
+
+  const UpdateControls = () => {
     const {
       isEditing,
       getSubmitButtonProps,
@@ -158,80 +174,87 @@ const ReceiverMessage: FC<{
     );
   };
 
-  const DeleteControls = () => {
-    return (
-      <ScaleFade initialScale={0.8} in={deleteAndUpdateButton.isOpen}>
-        <IconButton
-          rounded={"full"}
-          icon={<Icon as={BiTrash} />}
-          aria-label={`trash-message-${index}`}
-          mr={2}
-          onClick={deleteMessageDialog.onOpen}
-        />
-      </ScaleFade>
-    );
-  };
-
   return (
     <>
-      <DeleteMessageDialog
-        handleDeleteMessage={() => {
-          onDeleteMessage(messageItem._id);
-          deleteMessageDialog.onClose();
-        }}
-        {...deleteMessageDialog}
-      />
-      <Editable
-        defaultValue={messageItem.message}
-        submitOnBlur={false}
-        isPreviewFocusable={false}
-        onSubmit={(value) => onUpdateMessage(value, messageItem._id)}
-      >
-        <Flex
-          key={index}
-          w="100%"
-          justify="flex-end"
-          my={1}
-          onMouseEnter={deleteAndUpdateButton.onOpen}
-          onMouseLeave={deleteAndUpdateButton.onClose}
-          alignItems={"center"}
+      {onDeleteMessage && (
+        <DeleteMessageDialog
+          handleDeleteMessage={() => {
+            onDeleteMessage(messageItem._id);
+            deleteMessageDialog.onClose();
+          }}
+          {...deleteMessageDialog}
+        />
+      )}
+      {onUpdateMessage && (
+        <Editable
+          defaultValue={messageItem.message}
+          submitOnBlur={false}
+          isPreviewFocusable={false}
+          onSubmit={(value) => onUpdateMessage(value, messageItem._id)}
         >
-          <Flex mr={2}>
-            <DeleteControls />
-            <UpdateEditableControls />
-          </Flex>
           <Flex
-            flexDir={"column"}
-            align={"flex-end"}
-            color={"white"}
-            py={2}
-            px={{ base: "4", sm: "6" }}
-            bg={selfMessageColor}
-            shadow="lg"
-            borderRadius={{ base: "md", sm: "xl" }}
-            w="fit-content"
+            key={index}
+            w="100%"
+            justify="flex-end"
+            my={1}
+            onMouseEnter={deleteAndUpdateButton.onOpen}
+            onMouseLeave={deleteAndUpdateButton.onClose}
+            alignItems={"center"}
           >
-            <Kbd
-              // textAlign="end"
-              shadow="md"
-              color={useColorModeValue("black", "white")}
-            >
-              {messageItem.sender.displayName || "Anonymous"}
-            </Kbd>
-            <EditablePreview />
-            <EditableTextarea
-              minW={{ base: "xl", sm: "xs" }}
-              w="fit-content"
-              h="fit-content"
-              resize={"both"}
-            />
-            {/* <Text>{messageItem.message}</Text> */}
-            <Text fontSize={11}>
-              {new Date(messageItem.createdAt).toLocaleTimeString()}
-            </Text>
+            {!messageItem.deleted && (
+              <Flex mr={2}>
+                <DeleteControls />
+                <UpdateControls />
+              </Flex>
+            )}
+            {messageItem.deleted ? (
+              <Flex
+                flexDir={"column"}
+                align={"flex-end"}
+                py={2}
+                px={{ base: "4", sm: "6" }}
+                bg={deleteMessageColor}
+                shadow="lg"
+                borderRadius={{ base: "md", sm: "xl" }}
+                w="fit-content"
+              >
+                <Text opacity={0.5}>Tin nhắn đã bị gỡ</Text>
+              </Flex>
+            ) : (
+              <Flex
+                flexDir={"column"}
+                align={"flex-end"}
+                color={"white"}
+                py={2}
+                px={{ base: "4", sm: "6" }}
+                bg={"messenger.500"}
+                shadow="lg"
+                borderRadius={{ base: "md", sm: "xl" }}
+                w="fit-content"
+              >
+                <Kbd
+                  // textAlign="end"
+                  shadow="md"
+                  color={useColorModeValue("black", "white")}
+                >
+                  {messageItem.sender.displayName || "Anonymous"}
+                </Kbd>
+                <EditablePreview />
+                <EditableTextarea
+                  minW={{ base: "xl", sm: "xs" }}
+                  w="fit-content"
+                  h="fit-content"
+                  resize={"both"}
+                />
+                <Text fontSize={11} align="center">
+                  {messageItem.updated && "đã chỉnh sửa | "}
+                  {new Date(messageItem.createdAt).toLocaleTimeString()}
+                </Text>
+              </Flex>
+            )}
           </Flex>
-        </Flex>
-      </Editable>
+        </Editable>
+      )}
     </>
   );
 };
@@ -240,38 +263,48 @@ const SenderMessage: FC<{ messageItem: IMessage; index: number }> = ({
   messageItem,
   index,
 }) => {
+  const deleteMessageColor = useColorModeValue("gray.300", "gray.500");
   const elseMessageColor = useColorModeValue("#F6F9FA", "gray.600");
   const textColor = useColorModeValue("black", "white");
   const { data: sender } = useGetUserQuery(messageItem.sender._id);
 
-  useEffect(() => {
-    console.log(sender);
-  }, [sender]);
-
   return (
-    <Flex key={index} w="100%" my={1}>
-      <Avatar src={sender?.avatar || undefined} />
-      <Flex
-        flexDir={"column"}
-        align={"flex-start"}
-        color={textColor}
-        ml={2}
-        py={2}
-        px={{ base: "4", sm: "6" }}
-        bg={elseMessageColor}
-        boxShadow={"lg"}
-        borderRadius={{ base: "md", sm: "xl" }}
-      >
-        {/* <Link as={RouterLink} to={`/user/${messageItem.sender._id}`}> */}
-        {/* </Link> */}
-        <Kbd shadow="md" color={useColorModeValue("black", "white")}>
-          {sender?.displayName || "Anonymous"}
-        </Kbd>
-        <Text>{messageItem.message}</Text>
-        <Text fontSize={11}>
-          {new Date(messageItem.createdAt).toLocaleTimeString()}
-        </Text>
-      </Flex>
+    <Flex key={index} w="100%" my={1} align="start">
+      <Avatar src={sender?.avatar || undefined} mr={2} />
+      {messageItem.deleted ? (
+        <Flex
+          flexDir={"column"}
+          align={"flex-end"}
+          py={2}
+          px={{ base: "4", sm: "6" }}
+          bg={deleteMessageColor}
+          shadow="lg"
+          borderRadius={{ base: "md", sm: "xl" }}
+          w="fit-content"
+        >
+          <Text opacity={0.5}>Tin nhắn đã bị gỡ</Text>
+        </Flex>
+      ) : (
+        <Flex
+          flexDir={"column"}
+          align={"flex-start"}
+          color={textColor}
+          py={2}
+          px={{ base: "4", sm: "6" }}
+          bg={elseMessageColor}
+          boxShadow={"lg"}
+          borderRadius={{ base: "md", sm: "xl" }}
+        >
+          <Kbd shadow="md" color={useColorModeValue("black", "white")}>
+            {sender?.displayName || "Anonymous"}
+          </Kbd>
+          <Text>{messageItem.message}</Text>
+          <Text fontSize={11}>
+            {new Date(messageItem.createdAt).toLocaleTimeString()}
+            {messageItem.updated && " | đã chỉnh sửa"}
+          </Text>
+        </Flex>
+      )}
     </Flex>
   );
 };

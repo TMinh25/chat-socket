@@ -16,7 +16,14 @@ const PrivateRoute: FC<{ children: ReactNode }> = ({ children }) => {
   ) : (
     <>
       {(function () {
-        toast({ title: "Vui lòng đăng nhập", status: "warning" });
+        const requireSignInToast = "require-sign-in";
+        if (!toast.isActive(requireSignInToast)) {
+          toast({
+            id: requireSignInToast,
+            title: "Vui lòng đăng nhập",
+            status: "warning",
+          });
+        }
       })()}
       <Navigate to="/signin" state={{ from: location.pathname }} replace />
     </>

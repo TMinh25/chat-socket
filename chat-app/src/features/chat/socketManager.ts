@@ -6,6 +6,6 @@ export const socketManager = new Manager(config.server.url, {
   transports: ["websocket", "polling", "flashsocket"],
 });
 
-export const chatSocket: Socket = io("http://localhost:5000", {
+export const chatSocket: Socket = io("http://localhost:5000/messages", {
   withCredentials: true,
 });

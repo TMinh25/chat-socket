@@ -20,31 +20,8 @@ export const generalMessageApiSlice = createApi({
         }) => response.data,
         extraOptions: { refetchOnReconnect: true, refetchOnFocus: true },
       }),
-      updateGeneralMessage: builder.mutation<
-        string,
-        Pick<IMessage, "_id" | "message">
-      >({
-        query: ({ _id, ...body }) => ({
-          url: `/message/general/update/${_id}`,
-          method: "PATCH",
-          body,
-        }),
-        transformResponse: (response: { success: boolean; message: string }) =>
-          response.message,
-      }),
-      deleteGeneralMessage: builder.mutation<boolean, string | undefined>({
-        query: (_id) => ({
-          url: `/message/general/delete/${_id}`,
-          method: "DELETE",
-        }),
-        transformResponse: (response: { success: boolean }) => response.success,
-      }),
     };
   },
 });
 
-export const {
-  useGetAllGenenralMessagesQuery,
-  useUpdateGeneralMessageMutation,
-  useDeleteGeneralMessageMutation,
-} = generalMessageApiSlice;
+export const { useGetAllGenenralMessagesQuery } = generalMessageApiSlice;

@@ -1,159 +1,185 @@
 import {
-  AlertDialog,
-  AlertDialogBody,
-  AlertDialogContent,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogOverlay,
-  Avatar,
   Box,
-  Button,
+  BoxProps,
   Flex,
-  Kbd,
-  Skeleton,
   SkeletonCircle,
   SkeletonText,
   Spacer,
   useColorModeValue,
-  useDisclosure,
-  UseDisclosureReturn,
 } from "@chakra-ui/react";
-import React, { FC, useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
+import { useGetAllGenenralMessagesQuery } from "../../features/chat";
+import { chatSocket } from "../../features/chat/socketManager";
+import { useAppState } from "../../hooks/useAppState";
 import { useAuth } from "../../hooks/useAuth";
 import IMessage from "../../models/message.model";
 import Footer from "./footer";
 import MessagesBox from "./message";
-import { useAppState } from "../../hooks/useAppState";
-import {
-  useGetAllGenenralMessagesQuery,
-  useUpdateGeneralMessageMutation,
-  useDeleteGeneralMessageMutation,
-} from "../../features/chat";
-import { chatSocket } from "../../features/chat/socketManager";
 
 chatSocket.connect();
 
-const Chat = () => {
-  const { data, isLoading, refetch } = useGetAllGenenralMessagesQuery();
-  const [deleteMessage, deleteMessageResult] =
-    useDeleteGeneralMessageMutation();
-  const [updateMessage, updateMessageResult] =
-    useUpdateGeneralMessageMutation();
+const Chat = ({ ...rest }: BoxProps) => {
+  const { data, isLoading, refetch, isFetching } =
+    useGetAllGenenralMessagesQuery();
 
   const [messages, setMessages] = useState<IMessage[]>([]);
   const [inputMessage, setInputMessage] = useState("");
+  const chatSocketErrorToast = "toast-error-chat-socket";
+  const chatSocketSuccessToast = "toast-success-chat-socket";
   const { toast } = useAppState();
   const { currentUser } = useAuth();
 
   useEffect(() => {
-    if (!isLoading && data) {
+    if (!isLoading && !isFetching && data) {
       setMessages(data);
     }
   }, [data]);
 
-  chatSocket.on("connect", () => {
-    if (currentUser && currentUser?._id) {
-      chatSocket.emit("online", { userId: currentUser._id });
-    }
-  });
-
-  chatSocket.on("message all", function (msg) {
-    const oldMessages = [...messages];
-    oldMessages.push(JSON.parse(msg));
-    setMessages((val) => oldMessages);
-  });
-
   const handleSendMessage = () => {
-    if (!!inputMessage) {
-      chatSocket.emit(
-        "message all",
-        JSON.stringify({
-          message: inputMessage,
-          sender: {
-            _id: currentUser?._id,
-            displayName: currentUser?.displayName,
-          },
-          createdAt: new Date(),
-        } as IMessage)
-      );
+    if (!!inputMessage.trim()) {
+      chatSocket.emit("message all", {
+        message: inputMessage,
+        sender: {
+          _id: currentUser?._id,
+          displayName: currentUser?.displayName,
+        },
+      } as IMessage);
       setInputMessage("");
     }
   };
 
   const handleUpdateMessage = async (message: string, _id?: string) => {
-    try {
-      if (!!_id && !!message) {
-        const result = await updateMessage({ _id, message }).unwrap();
-        toast({
-          status: "success",
-          title: result,
-        });
-      }
-    } catch (error) {
-      toast({
-        status: "error",
-        title: "Lỗi",
-        description: (error as any).toString(),
-      });
-    } finally {
-      refetch();
+    if (!!_id && !!message) {
+      chatSocket.emit("update message", { _id, message });
     }
   };
 
   const handleDeleteMessage = (_id?: string): void => {
-    try {
-      if (!!_id) {
-        deleteMessage(_id);
-      }
-    } catch (error) {
-      toast({
-        status: "error",
-        title: "Lỗi",
-        description: (error as any).toString(),
-      });
-    } finally {
-      refetch();
+    if (!!_id) {
+      chatSocket.emit("delete message", _id);
     }
   };
 
-  useEffect(() => {
-    chatSocket.io.on("error", (error) => {
-      if (error.message === "xhr poll error") {
-        toast.closeAll();
-        toast({
-          status: "error",
-          title: "Mất kết nối!",
-          description: "Vui lòng đợi để kết nối lại với máy chủ...",
-        });
-      }
-    });
+  // useEffect(() => {
+  // console.log("initialize chat socket listener");
+  chatSocket.once("connect", () => {
+    if (currentUser && currentUser?._id) {
+      chatSocket.emit("online", { userId: currentUser._id });
+    }
+    if (!toast.isActive(chatSocketSuccessToast)) {
+      if (toast.isActive(chatSocketErrorToast))
+        toast.close(chatSocketErrorToast);
+      toast({
+        id: chatSocketSuccessToast,
+        status: "success",
+        title: "Khôi phục kết nối!",
+      });
+    }
   });
+  chatSocket.once("user connected", (users) => {
+    console.log(users);
+  });
+  chatSocket.once("disconnect", () => {
+    if (currentUser && currentUser?._id) {
+      chatSocket.emit("offline", { userId: currentUser._id });
+    }
+  });
+  chatSocket.once("error", (error) => {
+    if (
+      error.message === "xhr poll error" &&
+      !toast.isActive(chatSocketErrorToast)
+    ) {
+      toast.close(chatSocketSuccessToast);
+      toast({
+        id: chatSocketErrorToast,
+        status: "error",
+        title: "Mất kết nối!",
+        description: "Vui lòng đợi để kết nối lại với máy chủ...",
+        duration: null,
+      });
+    }
+  });
+  chatSocket.on("message all", (msg) => {
+    const oldMessages = [...messages];
+    oldMessages.push(msg);
+    setMessages(oldMessages);
+  });
+  chatSocket.on("update message result", ({ message, updated }) => {
+    console.log(message, updated);
+    if (updated) {
+      const oldMessages = [...messages];
+      const messageIndex = oldMessages.findIndex(
+        (val) => val._id === message._id
+      );
+      oldMessages[messageIndex] = message;
+      setMessages(oldMessages);
+      // refetch();
+    } else {
+      toast({
+        status: "error",
+        title: "Đã có lỗi xảy ra!",
+        description: "Hãy thử lại sau",
+      });
+    }
+  });
+  chatSocket.on("delete message result", ({ message, deleted }) => {
+    console.log(message, deleted);
+    if (deleted) {
+      const oldMessages = [...messages];
+      const messageIndex = oldMessages.findIndex(
+        (val) => val._id === message._id
+      );
+      console.log(messageIndex);
+      oldMessages[messageIndex] = message as IMessage;
+      setMessages(oldMessages);
+      // refetch();
+    } else {
+      toast({
+        status: "error",
+        title: "Đã có lỗi xảy ra!",
+        description: "Hãy thử lại sau",
+      });
+    }
+  });
+  // }, []);
 
   useEffect(() => console.log(messages), [messages]);
 
+  // useEffect(() => {
+  //   return function () {
+  //     chatSocket.off("update message result");
+  //     chatSocket.off("delete message result");
+  //     chatSocket.off("message all");
+  //     chatSocket.off("connect");
+  //     // chatSocket.disconnect();
+  //   };
+  // }, []);
+
   return (
     <>
-      <Flex h="100%" flexDir="column">
-        <Flex overflowY="scroll" flexDirection="column" px="8" py="4">
-          {isLoading ? (
-            <MessageSkeleton />
-          ) : (
-            <MessagesBox
-              flex="1 1 auto"
-              messages={messages}
-              onDeleteMessage={handleDeleteMessage}
-              onUpdateMessage={handleUpdateMessage}
-            />
-          )}
+      <Box flex="1 1 auto" {...rest}>
+        <Flex h="100%" flexDir="column">
+          <Flex overflowY="scroll" flexDirection="column" px="8" py="4">
+            {isLoading ? (
+              <MessageSkeleton />
+            ) : (
+              <MessagesBox
+                flex="1 1 auto"
+                messages={messages}
+                onDeleteMessage={handleDeleteMessage}
+                onUpdateMessage={handleUpdateMessage}
+              />
+            )}
+          </Flex>
+          <Spacer />
+          <Footer
+            flex="0 1 56px"
+            inputMessage={inputMessage}
+            setInputMessage={setInputMessage}
+            handleSendMessage={handleSendMessage}
+          />
         </Flex>
-        <Spacer />
-        <Footer
-          flex="0 1 56px"
-          inputMessage={inputMessage}
-          setInputMessage={setInputMessage}
-          handleSendMessage={handleSendMessage}
-        />
-      </Flex>
+      </Box>
     </>
   );
 };

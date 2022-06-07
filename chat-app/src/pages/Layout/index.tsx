@@ -3,11 +3,13 @@ import {
   Button,
   ButtonGroup,
   Circle,
+  Collapse,
   Divider,
   Flex,
   HStack,
   Icon,
   IconButton,
+  Link,
   Modal,
   ModalBody,
   ModalCloseButton,
@@ -21,14 +23,19 @@ import {
   PopoverHeader,
   PopoverTrigger,
   ScaleFade,
+  Stack,
   Tag,
   Text,
   useBreakpointValue,
   useColorModeValue,
   useDisclosure,
+  UseDisclosureReturn,
 } from "@chakra-ui/react";
-import { FiMenu } from "react-icons/fi";
+import { FcHome } from "react-icons/fc";
 import { MdOutlinePowerSettingsNew } from "react-icons/md";
+import { TbChevronDown } from "react-icons/tb";
+import { FiMenu } from "react-icons/fi";
+import { IoMdClose } from "react-icons/io";
 import {
   Link as RouterLink,
   Outlet,
@@ -39,11 +46,27 @@ import { useAppDispatch } from "../../app/hooks";
 import { ColorModeSwitcher } from "../../components/ColorModeSwitcher";
 import { useSignOutMutation } from "../../features/auth/authApiSlice";
 import { resetCredentials } from "../../features/auth/authSlice";
+import { chatSocket } from "../../features/chat/socketManager";
 import { useAppState } from "../../hooks/useAppState";
 import { useAuth } from "../../hooks/useAuth";
 import TokenService from "../../services/token.service";
-import { FcHome } from "react-icons/fc";
-// import { chatSocket } from "../../features/chat/socketManager";
+import { IconType } from "react-icons";
+
+interface NavItem {
+  label: string;
+  href: string;
+  disabled?: boolean;
+  icon?: IconType;
+}
+
+const NAVS: Array<NavItem> = [
+  { href: "/", icon: FcHome, label: "Trang Chủ" },
+  { href: "/message/all", label: "Tin Nhắn Chung" },
+  {
+    href: "/message/direct",
+    label: "Tin Nhắn Riêng",
+  },
+];
 
 export default function LandingPage() {
   const location = useLocation();
@@ -51,11 +74,11 @@ export default function LandingPage() {
   const isDesktop = useBreakpointValue({ base: false, lg: true });
   const { authenticated, currentUser } = useAuth();
   const borderColor = useColorModeValue("white", "black.50");
-  const borderColorTheme = useColorModeValue("gray.200", "gray.600");
   const [signOut, signOutResult] = useSignOutMutation();
   const signOutModal = useDisclosure();
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
+  const navDisclosure = useDisclosure();
 
   async function handleSignOut() {
     try {
@@ -63,7 +86,7 @@ export default function LandingPage() {
       dispatch(resetCredentials());
       TokenService.updateLocalAccessToken(null);
       TokenService.updateLocalRefreshToken(null);
-      // chatSocket.disconnect();
+      chatSocket.disconnect();
       signOutModal.onClose();
       navigate("/");
     } catch (error) {
@@ -74,6 +97,40 @@ export default function LandingPage() {
       });
     }
   }
+
+  const UserOnlineTag = () => (
+    <Popover>
+      <PopoverTrigger>
+        <Tag alignItems="center" cursor="pointer">
+          <Circle
+            size="3"
+            background="#31A24C"
+            mx={2}
+            border="2px solid"
+            borderColor={borderColor}
+          />
+          {currentUser?.displayName}
+        </Tag>
+      </PopoverTrigger>
+      <PopoverContent>
+        <PopoverHeader fontWeight="semibold">
+          <Text align="center">{currentUser?.displayName}</Text>
+        </PopoverHeader>
+        <PopoverBody>
+          <HStack mb={4} mt={2} spacing={2}>
+            <ColorModeSwitcher />
+          </HStack>
+          <Button
+            w="full"
+            colorScheme="red"
+            onClick={() => signOutModal.onOpen()}
+          >
+            Đăng Xuất
+          </Button>
+        </PopoverBody>
+      </PopoverContent>
+    </Popover>
+  );
 
   return (
     <ScaleFade key={location.pathname} initialScale={0.95} in={true}>
@@ -89,62 +146,29 @@ export default function LandingPage() {
           {isDesktop ? (
             <Flex justify="space-between" align="center">
               <ButtonGroup variant="solid" spacing="4">
-                <IconButton
-                  icon={<Icon as={FcHome} />}
-                  aria-label="nav-home-button"
-                  as={RouterLink}
-                  to="/"
-                />
-                {[
-                  { href: "/message/all", label: "Tin Nhắn Chung" },
-                  {
-                    href: "/message/direct",
-                    label: "Tin Nhắn Riêng",
-                    disabled: true,
-                  },
-                ].map((item, index) => (
-                  <Button
-                    as={RouterLink}
-                    to={item.disabled ? "#" : item.href}
-                    key={index}
-                    disabled={item.disabled}
-                  >
-                    {item.label}
-                  </Button>
-                ))}
+                {NAVS.map((item, index) => {
+                  return item.icon ? (
+                    <IconButton
+                      key={item.label}
+                      icon={<Icon as={item.icon} />}
+                      aria-label={`nav-button-${index}`}
+                      as={RouterLink}
+                      to={item.href}
+                    />
+                  ) : (
+                    <Button
+                      as={RouterLink}
+                      to={item.disabled ? "#" : item.href}
+                      key={item.label}
+                      disabled={item.disabled}
+                    >
+                      {item.label}
+                    </Button>
+                  );
+                })}
               </ButtonGroup>
               {authenticated ? (
-                <Popover>
-                  <PopoverTrigger>
-                    <Tag alignItems="center" cursor="pointer">
-                      <Circle
-                        size="3"
-                        background="#31A24C"
-                        mx={2}
-                        border="2px solid"
-                        borderColor={borderColor}
-                      />
-                      {currentUser?.displayName}
-                    </Tag>
-                  </PopoverTrigger>
-                  <PopoverContent>
-                    <PopoverHeader fontWeight="semibold">
-                      <Text align="center">{currentUser?.displayName}</Text>
-                    </PopoverHeader>
-                    <PopoverBody>
-                      <HStack mb={4} mt={2} spacing={2}>
-                        <ColorModeSwitcher />
-                      </HStack>
-                      <Button
-                        w="full"
-                        colorScheme="red"
-                        onClick={() => signOutModal.onOpen()}
-                      >
-                        Đăng Xuất
-                      </Button>
-                    </PopoverBody>
-                  </PopoverContent>
-                </Popover>
+                <UserOnlineTag />
               ) : (
                 <HStack spacing="3">
                   <Button variant="solid">Sign in</Button>
@@ -153,11 +177,20 @@ export default function LandingPage() {
               )}
             </Flex>
           ) : (
-            <IconButton
-              variant="ghost"
-              icon={<FiMenu fontSize="1.25rem" />}
-              aria-label="Open Menu"
-            />
+            <>
+              <Flex justify="space-between" align="center">
+                <IconButton
+                  variant="ghost"
+                  icon={<Icon as={navDisclosure.isOpen ? IoMdClose : FiMenu} />}
+                  aria-label="Toggle Menu"
+                  onClick={navDisclosure.onToggle}
+                />
+                <UserOnlineTag />
+              </Flex>
+              <Collapse in={navDisclosure.isOpen} animateOpacity>
+                <MobileNav onClose={navDisclosure.onClose} />
+              </Collapse>
+            </>
           )}
         </Box>
         <Divider />
@@ -185,10 +218,52 @@ export default function LandingPage() {
             </ModalContent>
           </Modal>
         )}
-        <Box flex="1 1 auto" h="calc(100vh - 112px)">
-          <Outlet />
-        </Box>
+        <Outlet />
       </Flex>
     </ScaleFade>
   );
 }
+
+const MobileNav = ({ onClose }: { onClose: () => void }) => {
+  return (
+    <Stack
+      bg={useColorModeValue("white", "gray.800")}
+      p={4}
+      mt={2}
+      display={{ lg: "none" }}
+    >
+      {NAVS.map((navItem) => (
+        <MobileNavItem key={navItem.label} onClose={onClose} {...navItem} />
+      ))}
+    </Stack>
+  );
+};
+
+const MobileNavItem = ({
+  label,
+  href,
+  disabled,
+  onClose,
+}: NavItem & { onClose: () => void }) => {
+  return (
+    <Flex
+      py={2}
+      as={RouterLink}
+      to={disabled ? "#" : href}
+      justify={"space-between"}
+      align={"center"}
+      _hover={{
+        textDecoration: "none",
+      }}
+      onClick={onClose}
+    >
+      <Text
+        fontWeight={600}
+        color={useColorModeValue("gray.600", "gray.200")}
+        textDecor={disabled ? "line-through" : undefined}
+      >
+        {label}
+      </Text>
+    </Flex>
+  );
+};
