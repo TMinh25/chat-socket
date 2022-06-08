@@ -1,16 +1,52 @@
 version: "3.7"
 
 services:
+  db: 
+    image: mongo:latest
+    container_name: mongo
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    networks:
+      - chat-network
+    volumes: 
+      - mongo_data:/data/db
+  api:
+    image: chat-api:latest
+    container_name: chat-api
+    build: 
+      context: chat-api
+    environment:
+      # - MONGO_URL=mongodb+srv://NguyenTruongMinh:07355608@tms-database.oni45.mongodb.net/?retryWrites=true&w=majority
+      - MONGO_URL=mongodb://mongo:27017/tms
+      - MONGO_USER=NguyenTruongMinh
+      - MONGO_PASS=07355608
+      - PORT=5000
+      - JWT_KEY=NguyenTruongMinh735568
+      - NODE_ENV=development
+    ports:
+      - "5000:5000"
+    links: 
+      - db
+    networks:
+      - chat-network
+    depends_on:
+      - db
+    
   app:
     image: chat-app:latest
+    container_name: chat-app
+    restart: unless-stopped
+    build: 
+      context: chat-app
+    environment:
+      - VITE_BACKEND_URL=http:localhost:5000/
     depends_on:
       - api
     ports:
       - "3000:3000"
-    restart: unless-stopped
-    container_name: chat-app
-  api:
-    image: chat-api:latest
-    ports:
-      - "5000:5000"
-    container_name: chat-api
+
+networks:
+  chat-network:
+volumes:
+  mongo_data:

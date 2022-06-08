@@ -8,6 +8,7 @@ import {
   useColorModeValue,
 } from "@chakra-ui/react";
 import React, { useEffect, useState } from "react";
+import { useAppDispatch } from "../../app/hooks";
 import { useGetAllGenenralMessagesQuery } from "../../features/chat";
 import { chatSocket } from "../../features/chat/socketManager";
 import { useAppState } from "../../hooks/useAppState";
@@ -16,14 +17,12 @@ import IMessage from "../../models/message.model";
 import Footer from "./footer";
 import MessagesBox from "./message";
 
-chatSocket.connect();
-
 const Chat = ({ ...rest }: BoxProps) => {
   const { data, isLoading, refetch, isFetching } =
     useGetAllGenenralMessagesQuery();
 
   const [messages, setMessages] = useState<IMessage[]>([]);
-  const [inputMessage, setInputMessage] = useState("");
+  const dispatch = useAppDispatch();
   const chatSocketErrorToast = "toast-error-chat-socket";
   const chatSocketSuccessToast = "toast-success-chat-socket";
   const { toast } = useAppState();
@@ -35,17 +34,21 @@ const Chat = ({ ...rest }: BoxProps) => {
     }
   }, [data]);
 
-  const handleSendMessage = () => {
-    if (!!inputMessage.trim()) {
-      chatSocket.emit("message all", {
-        message: inputMessage,
-        sender: {
-          _id: currentUser?._id,
-          displayName: currentUser?.displayName,
-        },
-      } as IMessage);
-      setInputMessage("");
-    }
+  useEffect(() => {
+    chatSocket.connect();
+    return () => {
+      chatSocket.disconnect();
+    };
+  }, []);
+
+  const handleSendMessage = (message: string) => {
+    chatSocket.emit("message all", {
+      message: message,
+      sender: {
+        _id: currentUser?._id,
+        displayName: currentUser?.displayName,
+      },
+    } as IMessage);
   };
 
   const handleUpdateMessage = async (message: string, _id?: string) => {
@@ -60,12 +63,8 @@ const Chat = ({ ...rest }: BoxProps) => {
     }
   };
 
-  // useEffect(() => {
-  // console.log("initialize chat socket listener");
-  chatSocket.once("connect", () => {
-    if (currentUser && currentUser?._id) {
-      chatSocket.emit("online", { userId: currentUser._id });
-    }
+  const reconnectSuccess = () => {
+    console.log(chatSocket.connected);
     if (!toast.isActive(chatSocketSuccessToast)) {
       if (toast.isActive(chatSocketErrorToast))
         toast.close(chatSocketErrorToast);
@@ -75,14 +74,18 @@ const Chat = ({ ...rest }: BoxProps) => {
         title: "Khôi phục kết nối!",
       });
     }
-  });
-  chatSocket.once("user connected", (users) => {
-    console.log(users);
-  });
+  };
+
+  // useEffect(() => {
+  // console.log("initialize chat socket listener");
+  chatSocket.once("connect", reconnectSuccess);
+  chatSocket.once("reconnect", reconnectSuccess);
   chatSocket.once("disconnect", () => {
+    console.log("disconnected");
     if (currentUser && currentUser?._id) {
-      chatSocket.emit("offline", { userId: currentUser._id });
+      chatSocket.emit("offline", currentUser._id);
     }
+    console.log(chatSocket.connected);
   });
   chatSocket.once("error", (error) => {
     if (
@@ -172,12 +175,7 @@ const Chat = ({ ...rest }: BoxProps) => {
             )}
           </Flex>
           <Spacer />
-          <Footer
-            flex="0 1 56px"
-            inputMessage={inputMessage}
-            setInputMessage={setInputMessage}
-            handleSendMessage={handleSendMessage}
-          />
+          <Footer flex="0 1 56px" handleSendMessage={handleSendMessage} />
         </Flex>
       </Box>
     </>

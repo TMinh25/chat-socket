@@ -36,7 +36,7 @@ function App() {
           dispatch(setCredentials(user));
           chatSocket.auth = { _id: user._id };
           chatSocket.connect();
-          chatSocket.emit("online", { userId: user._id });
+          chatSocket.emit("online", user._id);
         } catch (error: any) {
           console.log(error);
           const title =

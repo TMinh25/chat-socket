@@ -1,10 +1,12 @@
 import { combineReducers, configureStore } from "@reduxjs/toolkit";
 import { authApiSlice } from "../features/auth/authApiSlice";
+import chatStateSlice from "../features/chat/chatStateSlice";
 import authSlice from "../features/auth/authSlice";
 import { generalMessageApiSlice } from "../features/chat";
 import { userApiSlice } from "../features/user";
 const rootReducer = combineReducers({
   auth: authSlice,
+  chatState: chatStateSlice,
   [authApiSlice.reducerPath]: authApiSlice.reducer,
   [userApiSlice.reducerPath]: userApiSlice.reducer,
   [generalMessageApiSlice.reducerPath]: generalMessageApiSlice.reducer,

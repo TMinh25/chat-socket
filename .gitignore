@@ -4,4 +4,5 @@ chat-app/yarn-error.log
 chat-api/yarn-error.log
 chat-app/yarn.lock
 chat-api/yarn.lock
+data/
 .DS_Store

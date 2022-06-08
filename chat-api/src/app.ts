@@ -12,6 +12,8 @@ import initializeRoutes from "./routes";
 const NAMESPACE = "Server";
 const app = express();
 
+logger.debug(NAMESPACE, config);
+
 // Initialization
 mongoose
   .connect(config.mongo.url, config.mongo.options)
@@ -71,29 +73,25 @@ export const io = new Server(httpServer, {
   },
 });
 
-const onlineUsers = new Map<string, boolean>();
+let onlineUsers = new Array<string>();
 const ioChat = io.of("/messages");
 
 ioChat.on("connection", (socket) => {
-  socket.on("online", function ({ userId }: { userId: string }) {
-    logger.info(NAMESPACE, `Người dùng đã kết nối: ${userId}\ `);
-    onlineUsers.set(userId, Boolean(socket.id));
-    logger.debug(NAMESPACE, onlineUsers);
-    // console.log("a user " + data.userId + " connected");
-    // saving userId to object with socket ID
-    // onlineUsers[socket.id as any] = data.userId;
+  socket.on("online", function (userId: string) {
+    if (!onlineUsers.includes(userId)) {
+      onlineUsers.push(userId);
+    }
+    ioChat.emit("update online stack", onlineUsers);
   });
 
-  socket.broadcast.emit("user connected", onlineUsers);
-
-  socket.on("offline", function ({ userId }: { userId: string }) {
-    logger.debug(NAMESPACE, `Người dùng ngắt kết nối: ${userId} `);
-    onlineUsers.delete(userId);
-    logger.debug(NAMESPACE, onlineUsers);
+  socket.on("offline", function (userId: string) {
+    onlineUsers = onlineUsers.filter((id) => id !== userId);
+    ioChat.emit("update online stack", onlineUsers);
   });
-  function sendUserStack() {
-    ioChat.emit("online stack", onlineUsers);
-  }
+
+  socket.on("get online stack", () => {
+    ioChat.emit("update online stack", onlineUsers);
+  });
 
   socket.on("message all", async (msg) => {
     const message = await generalMessageController.pushMessage(msg);
@@ -108,7 +106,7 @@ ioChat.on("connection", (socket) => {
     });
     ioChat.emit("update message result", {
       message: newMessage,
-      update: Boolean(newMessage),
+      updated: Boolean(newMessage),
     });
   });
 
@@ -118,6 +116,5 @@ ioChat.on("connection", (socket) => {
       message: deletedMessage,
       deleted: Boolean(deletedMessage),
     });
-    logger.debug(NAMESPACE, "DELETE MESSAGE", _id);
   });
 });

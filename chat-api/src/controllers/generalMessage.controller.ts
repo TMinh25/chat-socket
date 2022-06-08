@@ -4,6 +4,7 @@ import GeneralMessage, {
 import { Request, Response } from "express";
 import logger from "../config/logger";
 import { isValidObjectID } from "../utils";
+import { CallbackError } from "mongoose";
 
 const NAMESPACE = "Message Controller";
 
@@ -17,22 +18,16 @@ const pushMessage = async (message: Partial<IGeneralMessage>) => {
   }
 };
 
-const deleteMessage = async (
-  _id: string
-): Promise<
-  | (IGeneralMessage & {
-      _id: string;
-    })
-  | null
-> => {
+const deleteMessage = async (_id: string): Promise<any | null> => {
   try {
     if (!isValidObjectID(_id) || !(await GeneralMessage.exists({ _id })))
       return null;
-    const message = await GeneralMessage.findOneAndUpdate(
+    const doc = await GeneralMessage.findOneAndUpdate(
       { _id },
-      { deleted: true }
+      { deleted: true },
+      { new: true }
     );
-    return message;
+    return doc;
   } catch (error) {
     logger.error(NAMESPACE, error);
     return null;

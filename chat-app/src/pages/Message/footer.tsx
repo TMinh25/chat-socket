@@ -1,41 +1,46 @@
-import React, { FC } from "react";
 import {
-  Flex,
-  Input,
   Button,
-  InputRightElement,
-  InputGroup,
+  Flex,
   FlexProps,
+  Input,
+  InputGroup,
+  InputRightElement,
 } from "@chakra-ui/react";
+import React, { FC, useState } from "react";
 
 const Footer: FC<
   {
-    inputMessage: string;
-    setInputMessage: React.Dispatch<React.SetStateAction<string>>;
-    handleSendMessage: () => void;
+    handleSendMessage: (message: string) => void;
   } & FlexProps
-> = ({ inputMessage, setInputMessage, handleSendMessage, ...props }) => {
+> = ({ handleSendMessage, ...props }) => {
+  const [inputMessage, setInputMessage] = useState("");
+
+  const onSendMessage = () => {
+    if (inputMessage.trim()) {
+      handleSendMessage(inputMessage);
+      setInputMessage("");
+    }
+  };
+
   return (
     <Flex w="100%" display="absolute" bottom="0" px={8} pb={4} {...props}>
       <InputGroup size="md">
         <Input
+          shadow="inner"
           pr="4.5rem"
           placeholder="Tin nhắn..."
           onKeyPress={(e) => {
             if (e.key === "Enter") {
-              handleSendMessage();
+              onSendMessage();
             }
           }}
           value={inputMessage}
-          shadow="inner"
-          onChange={(e) => setInputMessage(e.target.value)}
+          onChange={({ target: { value } }) => setInputMessage(value)}
         />
         <InputRightElement width="4.5rem">
           <Button
             disabled={inputMessage.trim().length <= 0}
-            // background={"#EC4EA2"}
-            // _hover={{ background: "" }}
-            onClick={handleSendMessage}
+            onClick={onSendMessage}
             h="1.75rem"
             size="sm"
             shadow="outline"

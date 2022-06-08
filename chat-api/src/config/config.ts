@@ -22,14 +22,12 @@ const MONGO = {
 
 const SERVER_HOSTNAME = process.env.SERVER_HOSTNAME || "localhost";
 const SERVER_PORT = process.env.PORT || 5000;
-const CHAT_SOCKET_PORT = Number(process.env.CHAT_SOCKET_PORT) || 8080;
 const SERVER_URL = process.env.SERVER_URL || "http://localhost:5000";
 
 const SERVER = {
   hostname: SERVER_HOSTNAME,
   port: SERVER_PORT,
   url: SERVER_URL,
-  chatSocketPort: CHAT_SOCKET_PORT,
 };
 
 const client = {

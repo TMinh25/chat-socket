@@ -9,7 +9,6 @@ import {
   HStack,
   Icon,
   IconButton,
-  Link,
   Modal,
   ModalBody,
   ModalCloseButton,
@@ -29,28 +28,29 @@ import {
   useBreakpointValue,
   useColorModeValue,
   useDisclosure,
-  UseDisclosureReturn,
 } from "@chakra-ui/react";
+import { useEffect } from "react";
+import { IconType } from "react-icons";
 import { FcHome } from "react-icons/fc";
-import { MdOutlinePowerSettingsNew } from "react-icons/md";
-import { TbChevronDown } from "react-icons/tb";
 import { FiMenu } from "react-icons/fi";
 import { IoMdClose } from "react-icons/io";
+import { MdOutlinePowerSettingsNew } from "react-icons/md";
 import {
   Link as RouterLink,
   Outlet,
   useLocation,
   useNavigate,
 } from "react-router-dom";
-import { useAppDispatch } from "../../app/hooks";
+import { useAppDispatch, useAppSelector } from "../../app/hooks";
 import { ColorModeSwitcher } from "../../components/ColorModeSwitcher";
 import { useSignOutMutation } from "../../features/auth/authApiSlice";
 import { resetCredentials } from "../../features/auth/authSlice";
+import { updateOnlineStack } from "../../features/chat/chatStateSlice";
 import { chatSocket } from "../../features/chat/socketManager";
 import { useAppState } from "../../hooks/useAppState";
 import { useAuth } from "../../hooks/useAuth";
 import TokenService from "../../services/token.service";
-import { IconType } from "react-icons";
+import { isArrayEqual } from "../../utils";
 
 interface NavItem {
   label: string;
@@ -82,6 +82,9 @@ export default function LandingPage() {
 
   async function handleSignOut() {
     try {
+      console.log(currentUser?._id);
+      chatSocket.emit("offline", currentUser?._id.toString());
+      console.log(currentUser?._id);
       await signOut().unwrap();
       dispatch(resetCredentials());
       TokenService.updateLocalAccessToken(null);
@@ -131,6 +134,20 @@ export default function LandingPage() {
       </PopoverContent>
     </Popover>
   );
+  const { onlineStack } = useAppSelector((state) => state.chatState);
+  // update online userss
+  useEffect(() => {
+    chatSocket.emit("get online stack");
+    chatSocket.on("update online stack", (onlineUsers) => {
+      console.log(isArrayEqual(onlineUsers, onlineStack));
+      if (!isArrayEqual(onlineUsers, onlineStack)) {
+        dispatch(updateOnlineStack(onlineUsers));
+      }
+    });
+    return () => {
+      chatSocket.off("update online stack");
+    };
+  }, []);
 
   return (
     <ScaleFade key={location.pathname} initialScale={0.95} in={true}>
