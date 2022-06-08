@@ -1,10 +1,5 @@
-<p align="center">
-  <a href="" rel="noopener">
-</p>
+<p align="center"></p>
 
 <h3 align="center">Chat App with ReactJS, Express & SocketIO</h3>
 
-<div align="center">
-
-[![Status](https://img.shields.io/badge/status-active-success.svg)]()
-</div>
+<div align="center"></div>
