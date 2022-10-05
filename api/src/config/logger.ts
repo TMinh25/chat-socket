@@ -4,7 +4,7 @@ import config from './config';
 
 // should log timestamp on production enviroment
 const getTimeStamp = (): string => {
-	return chalk.grey(moment().format("LTS"));
+	return moment().format("LTS");
 };
 
 const info = (namespace: string, message: any, object?: any): void => {

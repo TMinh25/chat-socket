@@ -100,7 +100,7 @@ const signUp = async (req: Request, res: Response) => {
   const emptyValidatorObject = <Object>{
     ...{ displayName, username, password },
   };
-  const emptyFieldArray = [];
+  const emptyFieldArray: String[] = [];
   for (const [key, value] of Object.entries(emptyValidatorObject)) {
     if (!value) {
       emptyFieldArray.push(key);

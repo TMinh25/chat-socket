@@ -1,8 +1,8 @@
-chat-app/node_modules/
-chat-api/node_modules/
-chat-app/yarn-error.log
-chat-api/yarn-error.log
-chat-app/yarn.lock
-chat-api/yarn.lock
+web-client/node_modules/
+api/node_modules/
+web-client/yarn-error.log
+api/yarn-error.log
+web-client/yarn.lock
+api/yarn.lock
 data/
 .DS_Store

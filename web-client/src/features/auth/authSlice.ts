@@ -2,7 +2,6 @@ import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import IUser from "../../models/user.model";
 import TokenService from "../../services/token.service";
 import { useSignUpMutation } from "./authApiSlice";
-// import fetch from "node-fetch";
 
 type AuthState = {
   authenticated: boolean;
